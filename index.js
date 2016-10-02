@@ -272,7 +272,7 @@ app.post('/webhook/', function (req, res) {
                 sendMovieData(sender, text.substring(text.indexOf(' ') + 1));
             } else if(text.indexOf('#starring ') === 0) {
                 sendPersonMoviesData(sender, text.substring(text.indexOf(' ') + 1));
-            } else {
+            } ele {
                 sendTextMessage(sender, changeTextNatural(text.substring(0,319)));
             }
         }
