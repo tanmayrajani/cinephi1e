@@ -4,9 +4,8 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const request = require('request')
 const app = express()
-const token = "EAAOuV67mJg0BAD45XIzxcd7yAMYzmMrIwtyxV6ezVG3Rjmxko8XbHToM6g6E0kifjzEMKjZBTVEOdKLdnTmO30XrPiJu7Pt9N9ZBDyaI9oxUgh3xMvYhkPJ1SZBFNB8ng23jEIlM81LTt4qKsDIZCgl4xpBxnmbGZBgZB9pO2mJgZDZD";
-
-const TMDb_API_KEY = 'fdc406059ac8613a1b1a4c4bb85b32fb';
+const token = process.env.FB_PAGE_ACCESS_TOKEN;
+const TMDb_API_KEY = process.env.TMDB_API_KEY;
 
 var natural = require('natural'),
     metaphone = natural.Metaphone, soundEx = natural.SoundEx, NGrams = natural.NGrams;
