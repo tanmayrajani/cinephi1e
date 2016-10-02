@@ -38,6 +38,7 @@ app.get('/webhook/', function (req, res) {
 })
 
 function sendTextMessage(sender, text) {
+    console.log('Responding to: ' + sender + '\nWith: "' + text + '"');
     let messageData = { text:text }
     request({
         url: 'https://graph.facebook.com/v2.6/me/messages',
@@ -56,13 +57,16 @@ function sendTextMessage(sender, text) {
     })
 }
 
+function selectAtRandom(listOfTexts) {
+    return listOfTexts[Math.floor(Math.random()*listOfTexts.length)];
+}
+
 function changeText(text) {
     if(text.indexOf('are you') >= 0 || metaphone.compare(text, "are you") || soundEx.compare(text, "are you")) {
         let returnText;
         console.log("here")
         if(text.indexOf('how') >= 0) {
-            let returnTexts = ["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."];
-            returnText = returnTexts[Math.round(Math.random()*6)];
+            returnText = selectAtRandom(["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."]);
         } else {
             returnText = text.replace('are you', 'I am');
             returnText = returnText.replace('?','.');
@@ -79,12 +83,11 @@ function changeText(text) {
 function changeTextNatural(text) {
     var returnText = text; 
     if(metaphone.compare(text, "how are you") || soundEx.compare(text, "how are you")) {
-        let returnTexts = ["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."];
-        returnText = returnTexts[Math.round(Math.random()*5)];
+        returnText = selectAtRandom(["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."]);
     } else if(metaphone.compare(text, "hey") || soundEx.compare(text, "hey") || metaphone.compare(text, "hello") || soundEx.compare(text, "hello") || metaphone.compare(text, "hi") || soundEx.compare(text, "hi") || metaphone.compare(text, "help") || soundEx.compare(text, "help")) {
         let punches = ["PS. YOU DO NOT TALK ABOUT FIGHT CLUB", "It's Groundhog day :)", "PS. I've got to return some videotapes!", "Let's put a smile on that face! :D", "Hasta la vista, baby :)", "PS. They call it Royale with cheese.", "Carpe diem. Seize the day, boys.", "PS. I see dead people. :|", "PS. May the Force be with you.", "PS. Life is like a box of chocoloates! :)"];
         returnText = "Hey! I'm a Messenger bot. I suggest movies, provide plot summary, etc.\n\nUse #plot <movie> for plot summary of a movie\n#suggest <movie> to find similar movies\n#starring <person> for popular movies of that actor/actress\n\n"
-        returnText += punches[Math.round(Math.random()*9)];
+        returnText += selectAtRandom(punches);
     }
     return returnText;
 }
@@ -256,7 +259,7 @@ app.post('/webhook/', function (req, res) {
     for (let i = 0; i < messaging_events.length; i++) {
         let event = req.body.entry[0].messaging[i]
         let sender = event.sender.id
-        console.log(sender)
+        console.log("Sender ID:" + sender);
         if (event.message && event.message.text) {
             let text = event.message.text.toLowerCase();
             if(text.indexOf('?') === 0){
