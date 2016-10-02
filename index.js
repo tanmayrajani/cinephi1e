@@ -1,5 +1,6 @@
 'use strict'
 
+const dateFormat = require('dateformat');
 const express = require('express')
 const bodyParser = require('body-parser')
 const request = require('request')
@@ -119,7 +120,10 @@ function findSimilarMovies(sender, genre_ids, fromMovieId) {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw new Error(error);
+        if (error) {
+            console.log(response);
+            throw new Error(error);
+        }
         var jsonbody = JSON.parse(body);
         var results = jsonbody.results.filter(function(movie) {
             return movie.id !== fromMovieId && movie.original_language === 'en';
@@ -140,7 +144,7 @@ function findSimilarMovies(sender, genre_ids, fromMovieId) {
     });
 }
 
-function sendMovieData(sender, searchQuery) {
+function sendMovieSuggestions(sender, searchQuery) {
     var options = { 
         method: 'GET',
         url: 'http://api.themoviedb.org/3/search/movie',
@@ -153,7 +157,10 @@ function sendMovieData(sender, searchQuery) {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw new Error(error);
+        if (error) {
+            console.log(response);
+            throw new Error(error);
+        }
         var jsonbody = JSON.parse(body);
         if(jsonbody.total_results > 0) {
             let prepareText = "Here are some movies related to "+ jsonbody.results[0].original_title;
@@ -184,7 +191,10 @@ function sendMoviePlot(sender, text) {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw new Error(error);
+        if (error) {
+            console.log(response);
+            throw new Error(error);
+        }
         var jsonbody = JSON.parse(body);
         if(jsonbody.total_results > 0) {
             let prepareText = jsonbody.results[0].original_title;
@@ -213,7 +223,10 @@ function searchMovieByPerson(sender, person_id) {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw new Error(error);
+        if (error) {
+            console.log(response);
+            throw new Error(error);
+        }
         var jsonbody = JSON.parse(body);
         if(jsonbody.results.length) {
             let moviesLength = jsonbody.results.length > 4 ? 5 : jsonbody.results.length;
@@ -243,7 +256,10 @@ function sendPersonMoviesData(sender, person) {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw new Error(error);
+        if (error) {
+            console.log(response);
+            throw new Error(error);
+        }
         var jsonbody = JSON.parse(body);
         if(jsonbody.results.length) {
             searchMovieByPerson(sender, jsonbody.results[0].id);
@@ -253,28 +269,67 @@ function sendPersonMoviesData(sender, person) {
     });
 }
 
+function sendMovieMetadata(sender, text) {
+    var options = {
+        method: 'GET',
+        url: 'http://api.themoviedb.org/3/search/movie',
+        qs: {
+            query: String(text),
+            include_adult: true,
+            language: 'en',
+            api_key: TMDb_API_KEY
+        }
+    };
+
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(response);
+            throw new Error(error);
+        }
+        var jsonbody = JSON.parse(body);
+        if(jsonbody.total_results > 0) {
+            let prepareText = jsonbody.results[0].original_title + "\n";
+            if(jsonbody.results[0].release_date) {
+                let releseDate = new Date(jsonbody.results[0].release_date);
+                prepareText += (releseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releseDate, "dddd, mmmm dS, yyyy") + ".\n";
+            }
+            let vote_average = jsonbody.results[0].vote_average;
+            let vote_count = jsonbody.results[0].vote_count;
+            if(vote_average && vote_count && vote_count > 0) {
+                prepareText += "Rated " + vote_average + " by " + vote_count + " votes.\n";
+            }
+            sendTextMessage(sender, prepareText);
+        } else {
+            sendTextMessage(sender, "Duh! Nothing found..");
+        }
+    });
+
+}
 
 app.post('/webhook/', function (req, res) {
     let messaging_events = req.body.entry[0].messaging
     for (let i = 0; i < messaging_events.length; i++) {
         let event = req.body.entry[0].messaging[i]
         let sender = event.sender.id
-        console.log("Sender ID:" + sender);
+        console.log('Sender ID:' + sender);
         if (event.message && event.message.text) {
             let text = event.message.text.toLowerCase();
+            console.log('Msg text: "' + text + '"');
             if(text.indexOf('?') === 0){
                 // The '?' alone as a message was invalid regex and crashed the server. :D 
                 // This is temporary fix. Maybe we can validate the regex before passing text to soundEx / metaphone
                 res.sendStatus(200);
                 return;
-            } else if((text.indexOf('#plot') === 0 && text.indexOf('#plot ') !== 0) || (text.indexOf('#suggest') === 0 && text.indexOf('#suggest ') !== 0) || (text.indexOf('#starring') === 0 && text.indexOf('#starring ') !== 0)){
+            } else if((text.indexOf('#plot') === 0 && text.indexOf('#plot ') !== 0) || (text.indexOf('#suggest') === 0 && text.indexOf('#suggest ') !== 0) || (text.indexOf('#starring') === 0 && text.indexOf('#starring ') !== 0) || (text.indexOf('#meta') === 0 && text.indexOf('#meta ') !== 0)){
                 sendTextMessage(sender, "Something went wrong. You mistyped something it looks like!")
             } else if(text.indexOf('#plot ') === 0) {
                 sendMoviePlot(sender, text.substring(text.indexOf(' ') + 1));
             } else if(text.indexOf('#suggest ') === 0) {
-                sendMovieData(sender, text.substring(text.indexOf(' ') + 1));
+                sendMovieSuggestions(sender, text.substring(text.indexOf(' ') + 1));
             } else if(text.indexOf('#starring ') === 0) {
                 sendPersonMoviesData(sender, text.substring(text.indexOf(' ') + 1));
+            } else if(text.indexOf('#meta ') === 0) {
+                sendMovieMetadata(sender, text.substring(text.indexOf(' ') + 1));
             } else {
                 sendTextMessage(sender, changeTextNatural(text.substring(0,319)));
             }
