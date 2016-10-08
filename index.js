@@ -269,6 +269,34 @@ function sendPersonMoviesData(sender, person) {
     });
 }
 
+function getMovieMetadataFromOMDb(sender, title) {
+    var options = {
+        method: 'GET',
+        url: 'http://omdbapi.com',
+        qs: {
+            t: String(title),
+            plot: 'short',
+            r: 'json'
+        }
+    };
+
+    request(options, function(error, response, body) {
+        if (error) {
+            console.log(response);
+            throw new Error(error);
+        }
+        var jsonbody = JSON.parse(body);
+        var releaseDate = new Date(jsonbody['Released']);
+        var prepareText = jsonbody['Title'] + "\n";
+        prepareText += (releaseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releaseDate, "dddd, mmmm dS, yyyy") + ".\n";
+        prepareText += "Rated " + jsonbody['imdbRating'] + " by " + jsonbody['imdbVotes'] + " Votes.\n";
+        if(jsonbody['Awards'].indexOf('Oscar') > -1) {
+            prepareText += jsonbody['Awards'];
+        }
+        sendTextMessage(sender, prepareText);
+    })
+}
+
 function sendMovieMetadata(sender, text) {
     var options = {
         method: 'GET',
@@ -288,17 +316,7 @@ function sendMovieMetadata(sender, text) {
         }
         var jsonbody = JSON.parse(body);
         if(jsonbody.total_results > 0) {
-            let prepareText = jsonbody.results[0].original_title + "\n";
-            if(jsonbody.results[0].release_date) {
-                let releseDate = new Date(jsonbody.results[0].release_date);
-                prepareText += (releseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releseDate, "dddd, mmmm dS, yyyy") + ".\n";
-            }
-            let vote_average = jsonbody.results[0].vote_average;
-            let vote_count = jsonbody.results[0].vote_count;
-            if(vote_average && vote_count && vote_count > 0) {
-                prepareText += "Rated " + vote_average + " by " + vote_count + " votes.\n";
-            }
-            sendTextMessage(sender, prepareText);
+            getMovieMetadataFromOMDb(sender, jsonbody.results[0].original_title);
         } else {
             sendTextMessage(sender, "Duh! Nothing found..");
         }
