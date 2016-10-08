@@ -85,9 +85,9 @@ function changeTextNatural(text) {
     var returnText = text; 
     if(metaphone.compare(text, "how are you") || soundEx.compare(text, "how are you")) {
         returnText = selectAtRandom(["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."]);
-    } else if(metaphone.compare(text, "hey") || soundEx.compare(text, "hey") || metaphone.compare(text, "hello") || soundEx.compare(text, "hello") || metaphone.compare(text, "hi") || soundEx.compare(text, "hi") || metaphone.compare(text, "help") || soundEx.compare(text, "help")) {
-        let punches = ["PS. YOU DO NOT TALK ABOUT FIGHT CLUB", "It's Groundhog day :)", "PS. I've got to return some videotapes!", "Let's put a smile on that face! :D", "Hasta la vista, baby :)", "PS. They call it Royale with cheese.", "Carpe diem. Seize the day, boys.", "PS. I see dead people. :|", "PS. May the Force be with you.", "PS. Life is like a box of chocoloates! :)"];
-        returnText = "Hey! I'm a Messenger bot. I suggest movies, provide plot summary, etc.\n\nUse #plot <movie> for plot summary of a movie\n#suggest <movie> to find similar movies\n#starring <person> for popular movies of that actor/actress\n\n"
+    } else if(metaphone.compare(text, "hey") || soundEx.compare(text, "hey") || metaphone.compare(text, "hello") || soundEx.compare(text, "hello") || metaphone.compare(text, "hi") || soundEx.compare(text, "hi") || metaphone.compare(text, "help") || soundEx.compare(text, "help") || metaphone.compare(text, "hey there") || soundEx.compare(text, "hey there")) {
+        let punches = ["PS. YOU DO NOT TALK ABOUT FIGHT CLUB", "It's Groundhog day :)", "PS. I've got to return some videotapes!", "Let's put a smile on that face! :D", "Hasta la vista, baby :)", "PS. They call it Royale with cheese.", "Carpe diem. Seize the day, boys.", "PS. I see dead people. :|", "May the Force be with you.", "Life is like a box of chocoloates! :)"];
+        returnText = "Hey! I'm a Messenger bot. I suggest movies, provide movie details, etc\n\nUse #plot, #suggest or #meta with movie name or #starring with person name\n\n#plot gives movie summary, #suggest lists similar movies, #meta, ratings and other details, #starring lists popular movies of actor\n\n"
         returnText += selectAtRandom(punches);
     }
     return returnText;
