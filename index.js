@@ -58,6 +58,33 @@ function sendTextMessage(sender, text) {
     })
 }
 
+function sendImage(sender, imgUrl) {
+    console.log('Responding to: ' + sender + '\nWith: "' + imgUrl + '"');
+    let messageData = { 
+        "attachment":{
+            "type":"image",
+            "payload":{
+                "url": String(imgUrl)
+            }
+        }
+    }
+    request({
+        url: 'https://graph.facebook.com/v2.6/me/messages',
+        qs: {access_token:token},
+        method: 'POST',
+        json: {
+            recipient: {id:sender},
+            message: messageData,
+        }
+    }, function(error, response, body) {
+        if (error) {
+            console.log('Error sending messages: ', error)
+        } else if (response.body.error) {
+            console.log('Error: ', response.body.error)
+        }
+    })
+}
+
 function selectAtRandom(listOfTexts) {
     return listOfTexts[Math.floor(Math.random()*listOfTexts.length)];
 }
@@ -288,12 +315,28 @@ function getMovieMetadataFromOMDb(sender, title) {
         var jsonbody = JSON.parse(body);
         var releaseDate = new Date(jsonbody['Released']);
         var prepareText = jsonbody['Title'] + "\n";
-        prepareText += (releaseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releaseDate, "dddd, mmmm dS, yyyy") + ".\n";
-        prepareText += "Rated " + jsonbody['imdbRating'] + " by " + jsonbody['imdbVotes'] + " Votes.\n";
+        prepareText += (releaseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releaseDate, "dddd, mmmm dS, yyyy") + "\n";
+
+        if(jsonbody['imdbRating'] !== 'N/A') {
+            prepareText += "Rated " + jsonbody['imdbRating'] + " by " + jsonbody['imdbVotes'] + " Votes.\n";            
+        }
+
+        if(jsonbody['Director'] !== 'N/A') {
+            prepareText += "Directed by " + jsonbody['Director'] + "\n"
+        }
+
+        if(jsonbody['Actors'] !== 'N/A' && jsonbody['Actors'].split(',').length > 1) {
+            prepareText += "Starring " + jsonbody['Actors'].split(',', 2).join(' and') + "\n";
+        }
+        
         if(jsonbody['Awards'].indexOf('Oscar') > -1) {
             prepareText += jsonbody['Awards'];
         }
+        console.log(prepareText.length);
         sendTextMessage(sender, prepareText);
+        if(jsonbody['Poster'] !== 'N/A') {
+            sendImage(sender, jsonbody['Poster']);  
+        } 
     })
 }
 
@@ -334,7 +377,7 @@ app.post('/webhook/', function (req, res) {
             let text = event.message.text.toLowerCase();
             console.log('Msg text: "' + text + '"');
             if(text.indexOf('?') === 0 || text.indexOf('*') === 0 || text.indexOf('\\') === 0){
-                // The '?' alone as a message was invalid regex and crashed the server. :D 
+                // The '?,*,\' as start of a message was invalid regex and crashed the server. :D 
                 // This is temporary fix. Maybe we can validate the regex before passing text to soundEx / metaphone
                 res.sendStatus(200);
                 return;
