@@ -313,6 +313,10 @@ function getMovieMetadataFromOMDb(sender, title) {
             throw new Error(error);
         }
         var jsonbody = JSON.parse(body);
+        if(jsonbody['Response'] === "False") {
+            sendTextMessage(sender, "Duh! Couldn't find details for that one..")
+            return;
+        }
         var releaseDate = new Date(jsonbody['Released']);
         var prepareText = jsonbody['Title'] + "\n";
         prepareText += (releaseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releaseDate, "dddd, mmmm dS, yyyy") + "\n";
@@ -329,7 +333,7 @@ function getMovieMetadataFromOMDb(sender, title) {
             prepareText += "Starring " + jsonbody['Actors'].split(',', 2).join(' and') + "\n";
         }
         
-        if(jsonbody['Awards'].indexOf('Oscar') > -1) {
+        if(jsonbody['Awards'] && jsonbody['Awards'].indexOf('Oscar') > -1) {
             prepareText += jsonbody['Awards'];
         }
         console.log(prepareText.length);
