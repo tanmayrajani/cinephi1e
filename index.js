@@ -1,34 +1,32 @@
-'use strict'
+'use strict';
 
 const dateFormat = require('dateformat');
-const express = require('express')
-const bodyParser = require('body-parser')
-const request = require('request')
-const app = express()
+const express = require('express');
+const bodyParser = require('body-parser');
+const request = require('request');
+const app = express();
 const token = process.env.FB_PAGE_ACCESS_TOKEN;
 const TMDb_API_KEY = process.env.TMDB_API_KEY;
 
 var natural = require('natural'),
-    metaphone = natural.Metaphone, soundEx = natural.SoundEx, NGrams = natural.NGrams;
+    metaphone = natural.Metaphone, soundEx = natural.SoundEx;
 
-var searchTerm = '';
-var url = "http://www.google.co.in/search?q="+searchTerm+"&cad=h";
-app.set('port', (process.env.PORT || 5000))
+app.set('port', (process.env.PORT || 5000));
 
 // Process application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({extended: false}))
+app.use(bodyParser.urlencoded({extended: false}));
 
 // Process application/json
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
 // Index route
 app.get('/', function (req, res) {
     res.send('Hello world, I am a chat bot');
-})
+});
 
 app.get('/privacy', function (req, res) {
     res.send('<h2 style="padding: 30px; font-family: consolas; text-decoration:underline">The Cinephile</h2><p style="font-family: consolas; font-size: 18px; padding: 10px 30px">This is built solely for learning purposes and is not intended for any kind of commercial activity and hence we do not collect any kind of user\'s personal information at all. We honor user\'s privacy and do not track anything at all. It is not developed in order to attract anyone under 13.</p>');
-})
+});
 
 // for Facebook verification
 app.get('/webhook/', function (req, res) {
@@ -36,18 +34,18 @@ app.get('/webhook/', function (req, res) {
         res.send(req.query['hub.challenge'])
     }
     res.send('Error, wrong token')
-})
+});
 
 function sendTextMessage(sender, text) {
     console.log('Responding to: ' + sender + '\nWith: "' + text + '"');
-    let messageData = { text:text }
+    let messageData = { text:text };
     request({
         url: 'https://graph.facebook.com/v2.6/me/messages',
         qs: {access_token:token},
         method: 'POST',
         json: {
             recipient: {id:sender},
-            message: messageData,
+            message: messageData
         }
     }, function(error, response, body) {
         if (error) {
@@ -67,14 +65,14 @@ function sendImage(sender, imgUrl) {
                 "url": String(imgUrl)
             }
         }
-    }
+    };
     request({
         url: 'https://graph.facebook.com/v2.6/me/messages',
         qs: {access_token:token},
         method: 'POST',
         json: {
             recipient: {id:sender},
-            message: messageData,
+            message: messageData
         }
     }, function(error, response, body) {
         if (error) {
@@ -92,7 +90,6 @@ function selectAtRandom(listOfTexts) {
 function changeText(text) {
     if(text.indexOf('are you') >= 0 || metaphone.compare(text, "are you") || soundEx.compare(text, "are you")) {
         let returnText;
-        console.log("here")
         if(text.indexOf('how') >= 0) {
             returnText = selectAtRandom(["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."]);
         } else {
@@ -128,7 +125,7 @@ function sendTextChunks(sender, text) {
     let sentences = text.split('.');
     for (var i = 0; i < sentences.length - 1; i++) {
         sendTextMessage(sender, sentences[i]);
-    };
+    }
 }
 
 function findSimilarMovies(sender, genre_ids, fromMovieId) {
@@ -154,14 +151,14 @@ function findSimilarMovies(sender, genre_ids, fromMovieId) {
         var jsonbody = JSON.parse(body);
         var results = jsonbody.results.filter(function(movie) {
             return movie.id !== fromMovieId && movie.original_language === 'en';
-        })
+        });
         if(results.length > 0) {
             let length = results.length > 4 ? 5 : results.length;
             for(let i=0; i<length; i++) {
                 let suggestion = results[i].original_title;
                 if(results[i].release_date) {
-                    let releseDate = new Date(results[i].release_date);
-                    suggestion += " (" + releseDate.getFullYear() + ")";
+                    let releaseDate = new Date(results[i].release_date);
+                    suggestion += " (" + releaseDate.getFullYear() + ")";
                 } 
                 sendTextMessage(sender, suggestion);
             }
@@ -400,10 +397,10 @@ app.post('/webhook/', function (req, res) {
             }
         }
     }
-    res.sendStatus(200)
-})
+    res.sendStatus(200);
+});
 
 app.listen(app.get('port'), function() {
     // console.log(sendMovieData(process.argv[2]))
     console.log('running on port', app.get('port'))
-})
+});
