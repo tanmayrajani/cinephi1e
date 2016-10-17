@@ -375,7 +375,7 @@ app.post('/webhook/', function (req, res) {
         let sender = event.sender.id
         console.log('Sender ID:' + sender);
         console.log("==============================")
-        console.log(event.message);
+        console.log(event);
         console.log("==============================")
         if (event.message && event.message.text) {
             let text = event.message.text.toLowerCase();
