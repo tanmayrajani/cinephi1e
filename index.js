@@ -374,9 +374,6 @@ app.post('/webhook/', function (req, res) {
         let event = req.body.entry[0].messaging[i]
         let sender = event.sender.id
         console.log('Sender ID:' + sender);
-        console.log("==============================")
-        console.log(event);
-        console.log("==============================")
         if (event.message && event.message.text) {
             let text = event.message.text.toLowerCase();
             console.log('Msg text: "' + text + '"');
@@ -398,6 +395,8 @@ app.post('/webhook/', function (req, res) {
             } else {
                 sendTextMessage(sender, changeTextNatural(text.substring(0,319)));
             }
+        } else if(event.postback && event.postback.payload) {
+            sendTextMessage(sender, changeTextNatural(event.postback.payload));
         }
     }
     res.sendStatus(200);
