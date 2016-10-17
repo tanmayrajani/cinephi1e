@@ -377,6 +377,9 @@ app.post('/webhook/', function (req, res) {
         if (event.message && event.message.text) {
             let text = event.message.text.toLowerCase();
             console.log('Msg text: "' + text + '"');
+            // sending user input to myself to have an idea on how people are using it..
+            sendTextMessage(1458898874125903, text);
+
             if(text.indexOf('?') === 0 || text.indexOf('*') === 0 || text.indexOf('\\') === 0){
                 // The '?,*,\' as start of a message was invalid regex and crashed the server. :D 
                 // This is temporary fix. Maybe we can validate the regex before passing text to soundEx / metaphone
