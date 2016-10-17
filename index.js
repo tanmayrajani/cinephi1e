@@ -56,6 +56,31 @@ function sendTextMessage(sender, text) {
     })
 }
 
+function sendTextMessagePromise(sender, text) {
+    console.log('Responding to: ' + sender + '\nWith: "' + text + '"');
+    let messageData = { text:text };
+    return new Promise(function(resolve, reject) {
+        request({
+            url: 'https://graph.facebook.com/v2.6/me/messages',
+            qs: {access_token:token},
+            method: 'POST',
+            json: {
+                recipient: {id:sender},
+                message: messageData
+            }
+        }, function(error, response, body) {
+            if (error) {
+                console.log('Error sending messages: ', error);
+                reject(error);
+            } else if (response.body.error) {
+                console.log('Error: ', response.body.error)
+            }
+            resolve(response);
+        })
+    })
+    
+}
+
 function sendImage(sender, imgUrl) {
     console.log('Responding to: ' + sender + '\nWith: "' + imgUrl + '"');
     let messageData = { 
@@ -117,15 +142,20 @@ function changeTextNatural(text) {
     return returnText;
 }
 
-function sendTextChunks(sender, text) {
+function sendTextChunks(sender, text, title) {
     if(text.length < 320) {
         sendTextMessage(sender, text);
         return;
     }
     let sentences = text.split('.');
-    for (var i = 0; i < sentences.length - 1; i++) {
-        sendTextMessage(sender, sentences[i]);
-    }
+    sentences.reduce(function(p, sentence) {
+        return p.then(function(){ return sendTextMessagePromise(sender, sentence); });
+    },sendTextMessagePromise(sender, title)); // initial
+
+
+    /*for (var i = 0; i < sentences.length - 1; i++) {
+        sendTextMessagePromise(sender, sentences[i]).then()
+    }*/
 }
 
 function findSimilarMovies(sender, genre_ids, fromMovieId) {
@@ -226,8 +256,7 @@ function sendMoviePlot(sender, text) {
                 let releseDate = new Date(jsonbody.results[0].release_date);
                 prepareText += " (" + releseDate.getFullYear() + ")";
             } 
-            sendTextMessage(sender, prepareText);
-            setTimeout(sendTextChunks(sender, jsonbody.results[0].overview), 1500);
+            sendTextChunks(sender, jsonbody.results[0].overview, prepareText);
         } else {
             sendTextMessage(sender, "Duh! Nothing found..");
         }
@@ -377,8 +406,6 @@ app.post('/webhook/', function (req, res) {
         if (event.message && event.message.text) {
             let text = event.message.text.toLowerCase();
             console.log('Msg text: "' + text + '"');
-            // sending user input to myself to have an idea on how people are using it..
-            // sendTextMessage(1458898874125903, text);
 
             if(text.indexOf('?') === 0 || text.indexOf('*') === 0 || text.indexOf('\\') === 0){
                 // The '?,*,\' as start of a message was invalid regex and crashed the server. :D 
