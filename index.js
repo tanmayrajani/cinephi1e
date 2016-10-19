@@ -194,9 +194,9 @@ function findSimilarMovies(sender, titleText, genre_ids, fromMovieId) {
                 suggestions.push(suggestion);
             }
 
-            sentences.reduce(function(p, sentence) {
-                return p.then(function(){ return sendTextMessagePromise(sender, sentence); });
-            },sendTextMessagePromise(sender, title)); // initial
+            suggestions.reduce(function(p, suggestion) {
+                return p.then(function(){ return sendTextMessagePromise(sender, suggestion); });
+            },sendTextMessagePromise(sender, titleText)); 
 
         } else {
             sendTextMessage(sender, "Couldn't find similar movies it seems! :(")
