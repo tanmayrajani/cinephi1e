@@ -158,7 +158,7 @@ function sendTextChunks(sender, text, title) {
     }*/
 }
 
-function findSimilarMovies(sender, genre_ids, fromMovieId) {
+function findSimilarMovies(sender, titleText, genre_ids, fromMovieId) {
     var options = { 
         method: 'GET',
         url: 'http://api.themoviedb.org/3/discover/movie',
@@ -184,16 +184,22 @@ function findSimilarMovies(sender, genre_ids, fromMovieId) {
         });
         if(results.length > 0) {
             let length = results.length > 4 ? 5 : results.length;
+            let suggestions = [];
             for(let i=0; i<length; i++) {
                 let suggestion = results[i].original_title;
                 if(results[i].release_date) {
                     let releaseDate = new Date(results[i].release_date);
                     suggestion += " (" + releaseDate.getFullYear() + ")";
                 } 
-                sendTextMessage(sender, suggestion);
+                suggestions.push(suggestion);
             }
+
+            sentences.reduce(function(p, sentence) {
+                return p.then(function(){ return sendTextMessagePromise(sender, sentence); });
+            },sendTextMessagePromise(sender, title)); // initial
+
         } else {
-            sendTextMessage(sender, "Something went wrong.. I'm working on it though!")
+            sendTextMessage(sender, "Couldn't find similar movies it seems! :(")
         }
     });
 }
@@ -223,8 +229,7 @@ function sendMovieSuggestions(sender, searchQuery) {
                 prepareText += " (" + releseDate.getFullYear() + ")";
             } 
             prepareText += ".. Hope you'll enjoy them! :)";
-            sendTextMessage(sender, prepareText);
-            setTimeout(findSimilarMovies(sender, jsonbody.results[0].genre_ids, jsonbody.results[0].id), 1500);
+            findSimilarMovies(sender, prepareText, jsonbody.results[0].genre_ids, jsonbody.results[0].id);
         } else {
             sendTextMessage(sender, "Duh! Nothing found..");
         }
