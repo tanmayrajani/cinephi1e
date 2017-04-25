@@ -150,7 +150,7 @@ function changeText(text) {
 }
 
 function changeTextNatural(text) {
-    var returnText = text;
+    var returnText = "Doesn't look like anything to me!";
     var text2 = text.replace(/\(|\)/g, "");
     if (metaphone.compare(text2, "how are you") || soundEx.compare(text2, "how are you")) {
         returnText = selectAtRandom(["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."]);
