@@ -9,12 +9,15 @@ const token = process.env.FB_PAGE_ACCESS_TOKEN;
 const TMDb_API_KEY = process.env.TMDB_API_KEY;
 
 var natural = require('natural'),
-    metaphone = natural.Metaphone, soundEx = natural.SoundEx;
+    metaphone = natural.Metaphone,
+    soundEx = natural.SoundEx;
 
 app.set('port', (process.env.PORT || 5000));
 
 // Process application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({
+    extended: false
+}));
 
 // Process application/json
 app.use(bodyParser.json());
@@ -38,16 +41,22 @@ app.get('/webhook/', function (req, res) {
 
 function sendTextMessage(sender, text) {
     console.log('Responding to: ' + sender + '\nWith: "' + text + '"');
-    let messageData = { text:text };
+    let messageData = {
+        text: text
+    };
     request({
         url: 'https://graph.facebook.com/v2.6/me/messages',
-        qs: {access_token:token},
+        qs: {
+            access_token: token
+        },
         method: 'POST',
         json: {
-            recipient: {id:sender},
+            recipient: {
+                id: sender
+            },
             message: messageData
         }
-    }, function(error, response, body) {
+    }, function (error, response, body) {
         if (error) {
             console.log('Error sending messages: ', error)
         } else if (response.body.error) {
@@ -58,17 +67,23 @@ function sendTextMessage(sender, text) {
 
 function sendTextMessagePromise(sender, text) {
     console.log('Responding to: ' + sender + '\nWith: "' + text + '"');
-    let messageData = { text:text };
-    return new Promise(function(resolve, reject) {
+    let messageData = {
+        text: text
+    };
+    return new Promise(function (resolve, reject) {
         request({
             url: 'https://graph.facebook.com/v2.6/me/messages',
-            qs: {access_token:token},
+            qs: {
+                access_token: token
+            },
             method: 'POST',
             json: {
-                recipient: {id:sender},
+                recipient: {
+                    id: sender
+                },
                 message: messageData
             }
-        }, function(error, response, body) {
+        }, function (error, response, body) {
             if (error) {
                 console.log('Error sending messages: ', error);
                 reject(error);
@@ -78,28 +93,32 @@ function sendTextMessagePromise(sender, text) {
             resolve(response);
         })
     })
-    
+
 }
 
 function sendImage(sender, imgUrl) {
     console.log('Responding to: ' + sender + '\nWith: "' + imgUrl + '"');
-    let messageData = { 
-        "attachment":{
-            "type":"image",
-            "payload":{
+    let messageData = {
+        "attachment": {
+            "type": "image",
+            "payload": {
                 "url": String(imgUrl)
             }
         }
     };
     request({
         url: 'https://graph.facebook.com/v2.6/me/messages',
-        qs: {access_token:token},
+        qs: {
+            access_token: token
+        },
         method: 'POST',
         json: {
-            recipient: {id:sender},
+            recipient: {
+                id: sender
+            },
             message: messageData
         }
-    }, function(error, response, body) {
+    }, function (error, response, body) {
         if (error) {
             console.log('Error sending messages: ', error)
         } else if (response.body.error) {
@@ -109,32 +128,33 @@ function sendImage(sender, imgUrl) {
 }
 
 function selectAtRandom(listOfTexts) {
-    return listOfTexts[Math.floor(Math.random()*listOfTexts.length)];
+    return listOfTexts[Math.floor(Math.random() * listOfTexts.length)];
 }
 
 function changeText(text) {
-    if(text.indexOf('are you') >= 0 || metaphone.compare(text, "are you") || soundEx.compare(text, "are you")) {
+    if (text.indexOf('are you') >= 0 || metaphone.compare(text, "are you") || soundEx.compare(text, "are you")) {
         let returnText;
-        if(text.indexOf('how') >= 0) {
+        if (text.indexOf('how') >= 0) {
             returnText = selectAtRandom(["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."]);
         } else {
             returnText = text.replace('are you', 'I am');
-            returnText = returnText.replace('?','.');
+            returnText = returnText.replace('?', '.');
         }
         return returnText;
-    } else if(text.indexOf('you are') >= 0) {
+    } else if (text.indexOf('you are') >= 0) {
         return text.replace('you are', 'I am');
-    } else if(text === 'weather') {
+    } else if (text === 'weather') {
         return "since when did you start giving shit about weather?";
     }
     return text;
 }
 
 function changeTextNatural(text) {
-    var returnText = text; 
-    if(metaphone.compare(text, "how are you") || soundEx.compare(text, "how are you")) {
+    var returnText = text;
+    var text2 = text.replace(/\(/g, "\(").replace(/\)/g, "\)")
+    if (metaphone.compare(text2, "how are you") || soundEx.compare(text2, "how are you")) {
         returnText = selectAtRandom(["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."]);
-    } else if(metaphone.compare(text, "hey") || soundEx.compare(text, "hey") || metaphone.compare(text, "hello") || soundEx.compare(text, "hello") || metaphone.compare(text, "hi") || soundEx.compare(text, "hi") || metaphone.compare(text, "help") || soundEx.compare(text, "help") || metaphone.compare(text, "hey there") || soundEx.compare(text, "hey there")) {
+    } else if (metaphone.compare(text2, "hey") || soundEx.compare(text2, "hey") || metaphone.compare(text2, "hello") || soundEx.compare(text2, "hello") || metaphone.compare(text2, "hi") || soundEx.compare(text2, "hi") || metaphone.compare(text2, "help") || soundEx.compare(text2, "help") || metaphone.compare(text2, "hey there") || soundEx.compare(text2, "hey there")) {
         let punches = ["PS. YOU DO NOT TALK ABOUT FIGHT CLUB", "It's Groundhog day :)", "PS. I've got to return some videotapes!", "Let's put a smile on that face! :D", "Hasta la vista, baby :)", "PS. They call it Royale with cheese.", "Carpe diem. Seize the day, boys.", "PS. I see dead people. :|", "May the Force be with you.", "Life is like a box of chocoloates! :)"];
         returnText = "Hey! I'm a Messenger bot. I suggest movies, provide movie details, etc\n\nUse #plot, #suggest or #meta with movie name or #starring with person name\n\n#plot gives movie summary, #suggest lists similar movies, #meta, ratings and other details, #starring lists popular movies of actor\n\n"
         returnText += selectAtRandom(punches);
@@ -143,26 +163,31 @@ function changeTextNatural(text) {
 }
 
 function sendTextChunks(sender, text, title) {
-    if(text.length < 320) {
+    if (text.length < 320) {
         sendTextMessage(sender, text);
         return;
     }
     let sentences = text.split('.');
-    sentences.reduce(function(p, sentence) {
-        return p.then(function(){ return sendTextMessagePromise(sender, sentence); });
-    },sendTextMessagePromise(sender, title)); // initial
+    sentences.reduce(function (p, sentence) {
+        return p.then(function () {
+            return sendTextMessagePromise(sender, sentence);
+        });
+    }, sendTextMessagePromise(sender, title)); // initial
+}
 
-
-    /*for (var i = 0; i < sentences.length - 1; i++) {
-        sendTextMessagePromise(sender, sentences[i]).then()
-    }*/
+function sendTextLists(sender, sentences) {
+    sentences.reduce(function (p, sentence) {
+        return p.then(function () {
+            return sendTextMessagePromise(sender, sentence);
+        });
+    });
 }
 
 function findSimilarMovies(sender, titleText, genre_ids, fromMovieId) {
-    var options = { 
+    var options = {
         method: 'GET',
         url: 'http://api.themoviedb.org/3/discover/movie',
-        qs: { 
+        qs: {
             with_genres: genre_ids.join(),
             sort_by: 'popularity.desc',
             'vote_average.gte': 5.5,
@@ -179,24 +204,26 @@ function findSimilarMovies(sender, titleText, genre_ids, fromMovieId) {
             throw new Error(error);
         }
         var jsonbody = JSON.parse(body);
-        var results = jsonbody.results.filter(function(movie) {
+        var results = jsonbody.results.filter(function (movie) {
             return movie.id !== fromMovieId && movie.original_language === 'en';
         });
-        if(results.length > 0) {
+        if (results.length > 0) {
             let length = results.length > 4 ? 5 : results.length;
             let suggestions = [];
-            for(let i=0; i<length; i++) {
+            for (let i = 0; i < length; i++) {
                 let suggestion = results[i].original_title;
-                if(results[i].release_date) {
+                if (results[i].release_date) {
                     let releaseDate = new Date(results[i].release_date);
                     suggestion += " (" + releaseDate.getFullYear() + ")";
-                } 
+                }
                 suggestions.push(suggestion);
             }
 
-            suggestions.reduce(function(p, suggestion) {
-                return p.then(function(){ return sendTextMessagePromise(sender, suggestion); });
-            },sendTextMessagePromise(sender, titleText)); 
+            suggestions.reduce(function (p, suggestion) {
+                return p.then(function () {
+                    return sendTextMessagePromise(sender, suggestion);
+                });
+            }, sendTextMessagePromise(sender, titleText));
 
         } else {
             sendTextMessage(sender, "Couldn't find similar movies it seems! :(")
@@ -205,14 +232,14 @@ function findSimilarMovies(sender, titleText, genre_ids, fromMovieId) {
 }
 
 function sendMovieSuggestions(sender, searchQuery) {
-    var options = { 
+    var options = {
         method: 'GET',
         url: 'http://api.themoviedb.org/3/search/movie',
-        qs: { 
+        qs: {
             query: String(searchQuery),
             include_adult: true,
             language: 'en',
-            api_key: TMDb_API_KEY 
+            api_key: TMDb_API_KEY
         }
     };
 
@@ -222,12 +249,12 @@ function sendMovieSuggestions(sender, searchQuery) {
             throw new Error(error);
         }
         var jsonbody = JSON.parse(body);
-        if(jsonbody.total_results > 0) {
-            let prepareText = "Here are some movies related to "+ jsonbody.results[0].original_title;
-            if(jsonbody.results[0].release_date) {
+        if (jsonbody.total_results > 0) {
+            let prepareText = "Here are some movies related to " + jsonbody.results[0].original_title;
+            if (jsonbody.results[0].release_date) {
                 let releseDate = new Date(jsonbody.results[0].release_date);
                 prepareText += " (" + releseDate.getFullYear() + ")";
-            } 
+            }
             prepareText += ".. Hope you'll enjoy them! :)";
             findSimilarMovies(sender, prepareText, jsonbody.results[0].genre_ids, jsonbody.results[0].id);
         } else {
@@ -238,14 +265,14 @@ function sendMovieSuggestions(sender, searchQuery) {
 }
 
 function sendMoviePlot(sender, text) {
-    var options = { 
+    var options = {
         method: 'GET',
         url: 'http://api.themoviedb.org/3/search/movie',
-        qs: { 
+        qs: {
             query: String(text),
             include_adult: true,
             language: 'en',
-            api_key: TMDb_API_KEY 
+            api_key: TMDb_API_KEY
         }
     };
 
@@ -255,12 +282,12 @@ function sendMoviePlot(sender, text) {
             throw new Error(error);
         }
         var jsonbody = JSON.parse(body);
-        if(jsonbody.total_results > 0) {
+        if (jsonbody.total_results > 0) {
             let prepareText = jsonbody.results[0].original_title;
-            if(jsonbody.results[0].release_date) {
+            if (jsonbody.results[0].release_date) {
                 let releseDate = new Date(jsonbody.results[0].release_date);
                 prepareText += " (" + releseDate.getFullYear() + ")";
-            } 
+            }
             sendTextChunks(sender, jsonbody.results[0].overview, prepareText);
         } else {
             sendTextMessage(sender, "Duh! Nothing found..");
@@ -270,13 +297,13 @@ function sendMoviePlot(sender, text) {
 }
 
 function searchMovieByPerson(sender, person_id) {
-    var options = { 
+    var options = {
         method: 'GET',
         url: 'http://api.themoviedb.org/3/discover/movie',
-        qs: { 
+        qs: {
             with_cast: String(person_id),
             include_adult: true,
-            api_key: TMDb_API_KEY 
+            api_key: TMDb_API_KEY
         }
     };
 
@@ -286,14 +313,14 @@ function searchMovieByPerson(sender, person_id) {
             throw new Error(error);
         }
         var jsonbody = JSON.parse(body);
-        if(jsonbody.results.length) {
+        if (jsonbody.results.length) {
             let moviesLength = jsonbody.results.length > 4 ? 5 : jsonbody.results.length;
-            for(let i=0; i<moviesLength; i++) {
+            for (let i = 0; i < moviesLength; i++) {
                 let suggestion = jsonbody.results[i].original_title;
-                if(jsonbody.results[i].release_date) {
+                if (jsonbody.results[i].release_date) {
                     let releseDate = new Date(jsonbody.results[i].release_date);
                     suggestion += " (" + releseDate.getFullYear() + ")";
-                } 
+                }
                 sendTextMessage(sender, suggestion);
             }
         } else {
@@ -303,13 +330,13 @@ function searchMovieByPerson(sender, person_id) {
 }
 
 function sendPersonMoviesData(sender, person) {
-    var options = { 
+    var options = {
         method: 'GET',
         url: 'http://api.themoviedb.org/3/search/person',
-        qs: { 
+        qs: {
             query: String(person),
             include_adult: true,
-            api_key: TMDb_API_KEY 
+            api_key: TMDb_API_KEY
         }
     };
 
@@ -319,7 +346,7 @@ function sendPersonMoviesData(sender, person) {
             throw new Error(error);
         }
         var jsonbody = JSON.parse(body);
-        if(jsonbody.results.length) {
+        if (jsonbody.results.length) {
             searchMovieByPerson(sender, jsonbody.results[0].id);
         } else {
             sendTextMessage(sender, "Duh! Didn't get you.. ")
@@ -338,40 +365,52 @@ function getMovieMetadataFromOMDb(sender, title) {
         }
     };
 
-    request(options, function(error, response, body) {
+    request(options, function (error, response, body) {
         if (error) {
             console.log(response);
             throw new Error(error);
         }
         var jsonbody = JSON.parse(body);
-        if(jsonbody['Response'] === "False") {
+        if (jsonbody['Response'] === "False") {
             sendTextMessage(sender, "Duh! Couldn't find details for that one..")
             return;
         }
-        var releaseDate = new Date(jsonbody['Released']);
         var prepareText = jsonbody['Title'] + "\n";
-        prepareText += (releaseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releaseDate, "dddd, mmmm dS, yyyy") + "\n";
+        var noInfo = 0;
+        var sentences = [];
 
-        if(jsonbody['imdbRating'] !== 'N/A') {
-            prepareText += "Rated " + jsonbody['imdbRating'] + " by " + jsonbody['imdbVotes'] + " Votes.\n";            
-        }
+        if (jsonbody['Released'] !== "N/A") {
+            var releaseDate = new Date(jsonbody['Released']);
+            prepareText += (releaseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releaseDate, "dddd, mmmm dS, yyyy") + "\n";
+        } else noInfo++;
 
-        if(jsonbody['Director'] !== 'N/A') {
+
+        if (jsonbody['imdbRating'] !== 'N/A') {
+            prepareText += "Rated " + jsonbody['imdbRating'] + " by " + jsonbody['imdbVotes'] + " Votes.\n";
+        } else noInfo++;
+
+        if (jsonbody['Director'] !== 'N/A') {
             prepareText += "Directed by " + jsonbody['Director'] + "\n"
-        }
+        } else noInfo++;
 
-        if(jsonbody['Actors'] !== 'N/A' && jsonbody['Actors'].split(',').length > 1) {
+        if (jsonbody['Actors'] !== 'N/A' && jsonbody['Actors'].split(',').length > 1) {
             prepareText += "Starring " + jsonbody['Actors'].split(',', 2).join(' and') + "\n";
-        }
-        
-        if(jsonbody['Awards'] && jsonbody['Awards'].indexOf('Oscar') > -1) {
+        } else noInfo++;
+
+        if (jsonbody['Awards'] && jsonbody['Awards'].indexOf('Oscar') > -1) {
             prepareText += jsonbody['Awards'];
         }
-        console.log(prepareText.length);
-        sendTextMessage(sender, prepareText);
-        if(jsonbody['Poster'] !== 'N/A') {
-            sendImage(sender, jsonbody['Poster']);  
-        } 
+
+        sentences.push(prepareText);
+
+        if (noInfo > 2) {
+            sentences.push("Ow! Some of the information might not be avaiable! :(");
+        }
+
+        sendTextLists(sender, sentences);
+        if (jsonbody['Poster'] !== 'N/A') {
+            sendImage(sender, jsonbody['Poster']);
+        }
     })
 }
 
@@ -393,7 +432,7 @@ function sendMovieMetadata(sender, text) {
             throw new Error(error);
         }
         var jsonbody = JSON.parse(body);
-        if(jsonbody.total_results > 0) {
+        if (jsonbody.total_results > 0) {
             getMovieMetadataFromOMDb(sender, jsonbody.results[0].original_title);
         } else {
             sendTextMessage(sender, "Duh! Nothing found..");
@@ -412,32 +451,32 @@ app.post('/webhook/', function (req, res) {
             let text = event.message.text.toLowerCase();
             console.log('Msg text: "' + text + '"');
 
-            if(text.indexOf('?') === 0 || text.indexOf('*') === 0 || text.indexOf('\\') === 0){
+            if (text.indexOf('?') === 0 || text.indexOf('*') === 0 || text.indexOf('\\') === 0) {
                 // The '?,*,\' as start of a message was invalid regex and crashed the server. :D 
                 // This is temporary fix. Maybe we can validate the regex before passing text to soundEx / metaphone
                 res.sendStatus(200);
                 return;
-            } else if((text.indexOf('#plot') === 0 && text.indexOf('#plot ') !== 0) || (text.indexOf('#suggest') === 0 && text.indexOf('#suggest ') !== 0) || (text.indexOf('#starring') === 0 && text.indexOf('#starring ') !== 0) || (text.indexOf('#meta') === 0 && text.indexOf('#meta ') !== 0)){
+            } else if ((text.indexOf('#plot') === 0 && text.indexOf('#plot ') !== 0) || (text.indexOf('#suggest') === 0 && text.indexOf('#suggest ') !== 0) || (text.indexOf('#starring') === 0 && text.indexOf('#starring ') !== 0) || (text.indexOf('#meta') === 0 && text.indexOf('#meta ') !== 0)) {
                 sendTextMessage(sender, "Something went wrong. You mistyped something it looks like!")
-            } else if(text.indexOf('#plot ') === 0) {
+            } else if (text.indexOf('#plot ') === 0) {
                 sendMoviePlot(sender, text.substring(text.indexOf(' ') + 1));
-            } else if(text.indexOf('#suggest ') === 0) {
+            } else if (text.indexOf('#suggest ') === 0) {
                 sendMovieSuggestions(sender, text.substring(text.indexOf(' ') + 1));
-            } else if(text.indexOf('#starring ') === 0) {
+            } else if (text.indexOf('#starring ') === 0) {
                 sendPersonMoviesData(sender, text.substring(text.indexOf(' ') + 1));
-            } else if(text.indexOf('#meta ') === 0) {
+            } else if (text.indexOf('#meta ') === 0) {
                 sendMovieMetadata(sender, text.substring(text.indexOf(' ') + 1));
             } else {
-                sendTextMessage(sender, changeTextNatural(text.substring(0,319)));
+                sendTextMessage(sender, changeTextNatural(text.substring(0, 319)));
             }
-        } else if(event.postback && event.postback.payload) {
+        } else if (event.postback && event.postback.payload) {
             sendTextMessage(sender, changeTextNatural(event.postback.payload));
         }
     }
     res.sendStatus(200);
 });
 
-app.listen(app.get('port'), function() {
+app.listen(app.get('port'), function () {
     // console.log(sendMovieData(process.argv[2]))
     console.log('running on port', app.get('port'))
 });
