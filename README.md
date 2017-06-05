@@ -12,8 +12,7 @@ You can ping him (him?) with the following..
 - **#starring actor-name**: for popular movies of given actor
 
 ### Some Examples:
-![Alt text](/images/suggest.jpg) ![Alt text](/images/starring.jpg) ![Alt text](/images/meta.jpg)
-
+![Suggest](/images/suggest.jpg) ![Starring](/images/starring.jpg) 
 ------------
 > more features coming soon.. 
 
