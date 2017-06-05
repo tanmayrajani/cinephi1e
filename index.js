@@ -8,6 +8,84 @@ const app = express();
 const token = process.env.FB_PAGE_ACCESS_TOKEN;
 const TMDb_API_KEY = process.env.TMDB_API_KEY;
 
+const genres = [{
+        "id": 28,
+        "name": "Action"
+    },
+    {
+        "id": 12,
+        "name": "Adventure"
+    },
+    {
+        "id": 16,
+        "name": "Animation"
+    },
+    {
+        "id": 35,
+        "name": "Comedy"
+    },
+    {
+        "id": 80,
+        "name": "Crime"
+    },
+    {
+        "id": 99,
+        "name": "Documentary"
+    },
+    {
+        "id": 18,
+        "name": "Drama"
+    },
+    {
+        "id": 10751,
+        "name": "Family"
+    },
+    {
+        "id": 14,
+        "name": "Fantasy"
+    },
+    {
+        "id": 36,
+        "name": "History"
+    },
+    {
+        "id": 27,
+        "name": "Horror"
+    },
+    {
+        "id": 10402,
+        "name": "Music"
+    },
+    {
+        "id": 9648,
+        "name": "Mystery"
+    },
+    {
+        "id": 10749,
+        "name": "Romance"
+    },
+    {
+        "id": 878,
+        "name": "Science Fiction"
+    },
+    {
+        "id": 10770,
+        "name": "TV Movie"
+    },
+    {
+        "id": 53,
+        "name": "Thriller"
+    },
+    {
+        "id": 10752,
+        "name": "War"
+    },
+    {
+        "id": 37,
+        "name": "Western"
+    }
+]
+
 var natural = require('natural'),
     metaphone = natural.Metaphone,
     soundEx = natural.SoundEx;
@@ -359,66 +437,6 @@ function sendPersonMoviesData(sender, person) {
     });
 }
 
-function getMovieMetadataFromOMDb(sender, title) {
-    var options = {
-        method: 'GET',
-        url: 'http://omdbapi.com',
-        qs: {
-            t: String(title),
-            plot: 'short',
-            r: 'json'
-        }
-    };
-
-    request(options, function (error, response, body) {
-        if (error) {
-            console.log(response);
-            throw new Error(error);
-        }
-        var jsonbody = JSON.parse(body);
-        if (jsonbody['Response'] === "False") {
-            sendTextMessage(sender, "Duh! Couldn't find details for that one..")
-            return;
-        }
-        var prepareText = jsonbody['Title'] + "\n";
-        var noInfo = 0;
-        var sentences = [];
-
-        if (jsonbody['Released'] !== "N/A") {
-            var releaseDate = new Date(jsonbody['Released']);
-            prepareText += (releaseDate < Date.now() ? "Released on " : "Releases on ") + dateFormat(releaseDate, "dddd, mmmm dS, yyyy") + "\n";
-        } else noInfo++;
-
-
-        if (jsonbody['imdbRating'] !== 'N/A') {
-            prepareText += "Rated " + jsonbody['imdbRating'] + " by " + jsonbody['imdbVotes'] + " Votes.\n";
-        } else noInfo++;
-
-        if (jsonbody['Director'] !== 'N/A') {
-            prepareText += "Directed by " + jsonbody['Director'] + "\n"
-        } else noInfo++;
-
-        if (jsonbody['Actors'] !== 'N/A' && jsonbody['Actors'].split(',').length > 1) {
-            prepareText += "Starring " + jsonbody['Actors'].split(',', 2).join(' and') + "\n";
-        } else noInfo++;
-
-        if (jsonbody['Awards'] && jsonbody['Awards'].indexOf('Oscar') > -1) {
-            prepareText += jsonbody['Awards'];
-        }
-
-        sentences.push(prepareText);
-
-        if (noInfo > 2) {
-            sentences.push("Ow! Some of the information might not be avaiable! :(");
-        }
-
-        sendTextLists(sender, sentences);
-        if (jsonbody['Poster'] !== 'N/A') {
-            sendImage(sender, jsonbody['Poster']);
-        }
-    })
-}
-
 function sendMovieMetadata(sender, text) {
     var options = {
         method: 'GET',
@@ -438,7 +456,32 @@ function sendMovieMetadata(sender, text) {
         }
         var jsonbody = JSON.parse(body);
         if (jsonbody.total_results > 0) {
-            getMovieMetadataFromOMDb(sender, jsonbody.results[0].original_title);
+            let moviedata = jsonbody.results[0]
+            let response = moviedata.title + "\n";
+            if (moviedata.vote_average) {
+                response += "Vote Average: " + moviedata.vote_average + " / 10\n";
+            }
+
+            if (moviedata.genre_ids && moviedata.genre_ids.length) {
+                let genre_names = genres.reduce(function (arr, obj) {
+                    if (moviedata.genre_ids.indexOf(obj.id) > -1) {
+                        arr.push(obj.name)
+                    }
+                    return arr;
+                }, [])
+                if (genre_names) {
+                    response += "Genre: " + genre_names.join(", ") + "\n"
+                }
+            }
+
+            if (moviedata.release_date) {
+                response += "Release Date: " + dateFormat(new Date(moviedata.release_date), "dddd, mmmm dS, yyyy")
+            }
+            sendTextMessage(sender, response);
+
+            if (moviedata.poster_path) {
+                sendImage(sender, "https://image.tmdb.org/t/p/w500" + moviedata.poster_path);
+            }
         } else {
             sendTextMessage(sender, "Duh! Nothing found..");
         }
