@@ -4,20 +4,15 @@ const dateFormat = require('dateformat');
 const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('request');
-// youtube search api helper lib
 const search = require('youtube-search');
 
 const app = express();
 const token = process.env.FB_PAGE_ACCESS_TOKEN;
 const TMDb_API_KEY = process.env.TMDB_API_KEY;
 
-// temporary
-const YOUTUBE_API_KEY = 'AIzaSyC2GcXEVt1_QWmgg01quBEqjXeg2TYbn5w';
-
-// options for yt-search
-const OPTS = {
-        maxResults : 10,
-        key : YOUTUBE_API_KEY
+const YOUTUBE_SEARCH_OPTS = {
+    maxResults: 10,
+    key: process.env.YOUTUBE_API_KEY
 };
 
 const genres = [{
@@ -449,6 +444,54 @@ function sendPersonMoviesData(sender, person) {
     });
 }
 
+function sendTrailerButtonWithTextAndPoster(sender, moviedata, text) {
+    getTrailerLink(moviedata.title).then(function (trailerLink) {
+        let messageData = {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "button",
+                    "text": text,
+                    "buttons": [{
+                        "type": "web_url",
+                        "url": trailerLink,
+                        "title": "Watch Trailer"
+                    }]
+                }
+            }
+        }
+
+        request({
+            url: 'https://graph.facebook.com/v2.6/me/messages',
+            qs: {
+                access_token: token
+            },
+            method: 'POST',
+            json: {
+                recipient: {
+                    id: sender
+                },
+                message: messageData
+            }
+        }, function (error, response, body) {
+            if (error) {
+                console.log('Error sending messages: ', error)
+            } else if (response.body.error) {
+                console.log('Error: ', response.body.error)
+            }
+            if (moviedata.poster_path) {
+                sendImage(sender, "https://image.tmdb.org/t/p/w500" + moviedata.poster_path);
+            }
+        })
+    }, function () { // error callback; send text and poster without trailer button
+        sendTextMessage(sender, text);
+        if (moviedata.poster_path) {
+            sendImage(sender, "https://image.tmdb.org/t/p/w500" + moviedata.poster_path);
+        }
+    })
+
+}
+
 function sendMovieMetadata(sender, text) {
     var options = {
         method: 'GET',
@@ -470,7 +513,7 @@ function sendMovieMetadata(sender, text) {
         if (jsonbody.total_results > 0) {
             let moviedata = jsonbody.results[0]
             let response = moviedata.title + "\n";
-            response += getTrailerLink(moviedata.title) + "\n";         // for trailer link
+
             if (moviedata.vote_average) {
                 response += "Vote Average: " + moviedata.vote_average + " / 10\n";
             }
@@ -490,11 +533,7 @@ function sendMovieMetadata(sender, text) {
             if (moviedata.release_date) {
                 response += "Release Date: " + dateFormat(new Date(moviedata.release_date), "dddd, mmmm dS, yyyy")
             }
-            sendTextMessage(sender, response);
-
-            if (moviedata.poster_path) {
-                sendImage(sender, "https://image.tmdb.org/t/p/w500" + moviedata.poster_path);
-            }
+            sendTrailerButtonWithTextAndPoster(sender, moviedata, response);
         } else {
             sendTextMessage(sender, "Duh! Nothing found..");
         }
@@ -504,83 +543,24 @@ function sendMovieMetadata(sender, text) {
 
 // function by @beingadityak
 // function for getting youtube link
-function getTrailerLink(searchstring)
-{
+function getTrailerLink(searchstring) {
     var ytlink = null;
     var searchtext = searchstring + " trailer";
-    search(searchtext, OPTS, function(err,results){
-    if(err)
-        console.log(err);
-    for(var i = 0; i < results.length; i++)
-       {
-            var title = results[i].title;
-            if(title.indexOf("official trailer") !== 1 || title.indexOf("Official Trailer") !== 1 || title.indexOf("Trailer") !== 1)
-            {
-                index = i;
-                ytlink = results[index].link;
-                break;
+    return new Promise(function (resolve, reject) {
+        search(searchtext, YOUTUBE_SEARCH_OPTS, function (err, results) {
+            if (err) {
+                console.log(err);
+                reject(err);
             }
-        }
-    return ytlink;
-    });
-}
-
-// function by @beingadityak
-
-function sendTrailerLink(sender, text)
-{
-    // for getting exact movie name
-    var options =
-    {
-        method: 'GET',
-        url: 'http://api.themoviedb.org/3/search/movie',
-        qs: 
-        {
-            query: String(text),
-            include_adult: true,
-            language: 'en',
-            api_key: TMDb_API_KEY
-        }
-    };
-    request(options, function (error, response, body) {
-        if (error)
-        {
-            console.log(response);
-            throw new Error(error);
-        }
-        var jsonbody = JSON.parse(body);
-        
-        if (jsonbody.total_results > 0)
-        {
-            var moviedata = jsonbody.results[0];
-            var movietitle = moviedata.title;
-            var ytlink = null;
-            // proper title from TMDB. now, search in YT
-            var searchtext = movietitle + " trailer";
-
-            search(searchtext, OPTS, function(err,results){
-                if(err)
-                    console.log(err);
-                for(var i = 0; i < results.length; i++)
-                {
-                    var title = results[i].title;
-                    if(title.indexOf("official trailer") !== 1 || title.indexOf("Official Trailer") !== 1 || title.indexOf("Trailer") !== 1)
-                    {
-                        index = i;
-                        ytlink = results[index].link;
-                        sendTextMessage(sender, ytlink);
-                        break;
-                    }
+            for (var i = 0; i < results.length; i++) {
+                var title = results[i].title;
+                if (title.toLowerCase().indexOf("official trailer") !== -1 || title.toLowerCase().indexOf("trailer") !== -1) {
+                    resolve(results[i].link);
+                    break;
                 }
-
-            });
-            
-        } 
-        else 
-        {
-            sendTextMessage(sender, "Duh! Nothing found..");
-        }
-    });    
+            }
+        });
+    });
 }
 
 app.post('/webhook/', function (req, res) {
@@ -593,7 +573,11 @@ app.post('/webhook/', function (req, res) {
             let text = event.message.text.toLowerCase();
             console.log('Msg text: "' + text + '"');
 
-            if ((text.indexOf('#plot') === 0 && text.indexOf('#plot ') !== 0) || (text.indexOf('#suggest') === 0 && text.indexOf('#suggest ') !== 0) || (text.indexOf('#starring') === 0 && text.indexOf('#starring ') !== 0) || (text.indexOf('#meta') === 0 && text.indexOf('#meta ') !== 0) || (text.indexOf('#trailer') === 0 && text.indexOf('#trailer ') !== 0)) {
+            if ((text.indexOf('#plot') === 0 && text.indexOf('#plot ') !== 0) ||
+                (text.indexOf('#suggest') === 0 && text.indexOf('#suggest ') !== 0) ||
+                (text.indexOf('#starring') === 0 && text.indexOf('#starring ') !== 0) ||
+                (text.indexOf('#meta') === 0 && text.indexOf('#meta ') !== 0) ||
+                (text.indexOf('#trailer') === 0 && text.indexOf('#trailer ') !== 0)) {
                 sendTextMessage(sender, "Something went wrong. You mistyped something it looks like!")
             } else if (text.indexOf('#plot ') === 0) {
                 sendMoviePlot(sender, text.substring(text.indexOf(' ') + 1));
@@ -603,12 +587,7 @@ app.post('/webhook/', function (req, res) {
                 sendPersonMoviesData(sender, text.substring(text.indexOf(' ') + 1));
             } else if (text.indexOf('#meta ') === 0) {
                 sendMovieMetadata(sender, text.substring(text.indexOf(' ') + 1));
-            }
-            else if (text.indexOf('#trailer ') === 0) {
-                sendTrailerLink(sender, text.substring(text.indexOf(' ') + 1));
-            } 
-            else 
-            {
+            } else {
                 sendTextMessage(sender, changeTextNatural(text.substring(0, 319)));
             }
         } else if (event.postback && event.postback.payload) {
@@ -619,6 +598,5 @@ app.post('/webhook/', function (req, res) {
 });
 
 app.listen(app.get('port'), function () {
-    // console.log(sendMovieData(process.argv[2]))
     console.log('running on port', app.get('port'))
 });
