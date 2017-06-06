@@ -15,7 +15,7 @@ const TMDb_API_KEY = process.env.TMDB_API_KEY;
 const YOUTUBE_API_KEY = 'AIzaSyC2GcXEVt1_QWmgg01quBEqjXeg2TYbn5w';
 
 // options for yt-search
-const opts = {
+const OPTS = {
         maxResults : 10,
         key : YOUTUBE_API_KEY
 };
@@ -247,7 +247,7 @@ function changeTextNatural(text) {
             return selectAtRandom(["I'm good..\nhow about you?", "Umm.. I'm okay..", "Not bad..", "I'm great..", "I am doing good..", "doing good these days :)\nyou say.."]);
         } else if (text2 == "" || metaphone.compare(text2, "hey") || soundEx.compare(text2, "hey") || metaphone.compare(text2, "hello") || soundEx.compare(text2, "hello") || metaphone.compare(text2, "hi") || soundEx.compare(text2, "hi") || metaphone.compare(text2, "help") || soundEx.compare(text2, "help") || metaphone.compare(text2, "hey there") || soundEx.compare(text2, "hey there")) {
             let punches = ["PS. YOU DO NOT TALK ABOUT FIGHT CLUB", "It's Groundhog day :)", "PS. I've got to return some videotapes!", "Let's put a smile on that face! :D", "Hasta la vista, baby :)", "PS. They call it Royale with cheese.", "Carpe diem. Seize the day, boys.", "PS. I see dead people. :|", "May the Force be with you.", "Life is like a box of chocoloates! :)"];
-            return "Hey! I'm a Messenger bot. I suggest movies, provide movie details, etc\n\nUse #plot, #suggest or #meta with movie name or #starring with person name\n\n#plot gives movie summary, #suggest lists similar movies, #meta, ratings and other details, #starring lists popular movies of actor\n\n" + selectAtRandom(punches);
+            return "Hey! I'm a Messenger bot. I suggest movies, provide movie details, etc\n\nUse #plot, #suggest, #trailer or #meta with movie name or #starring with person name\n\n#plot gives movie summary, #suggest lists similar movies, #meta, ratings and other details, #starring lists popular movies of actor, #trailer gives a youtube trailer link for the movie\n\n" + selectAtRandom(punches);
         }
     } catch (err) {
         // This is a guard to catch any invalid regex errors.
@@ -470,6 +470,7 @@ function sendMovieMetadata(sender, text) {
         if (jsonbody.total_results > 0) {
             let moviedata = jsonbody.results[0]
             let response = moviedata.title + "\n";
+            response += getTrailerLink(moviedata.title) + "\n";         // for trailer link
             if (moviedata.vote_average) {
                 response += "Vote Average: " + moviedata.vote_average + " / 10\n";
             }
@@ -499,6 +500,29 @@ function sendMovieMetadata(sender, text) {
         }
     });
 
+}
+
+// function by @beingadityak
+// function for getting youtube link
+function getTrailerLink(searchstring)
+{
+    var ytlink = null;
+    var searchtext = searchstring + " trailer";
+    search(searchtext, OPTS, function(err,results){
+    if(err)
+        console.log(err);
+    for(var i = 0; i < results.length; i++)
+       {
+            var title = results[i].title;
+            if(title.indexOf("official trailer") !== 1 || title.indexOf("Official Trailer") !== 1 || title.indexOf("Trailer") !== 1)
+            {
+                index = i;
+                ytlink = results[index].link;
+                break;
+            }
+        }
+    return ytlink;
+    });
 }
 
 // function by @beingadityak
@@ -534,7 +558,7 @@ function sendTrailerLink(sender, text)
             // proper title from TMDB. now, search in YT
             var searchtext = movietitle + " trailer";
 
-            search(searchtext, opts, function(err,results){
+            search(searchtext, OPTS, function(err,results){
                 if(err)
                     console.log(err);
                 for(var i = 0; i < results.length; i++)
@@ -569,7 +593,7 @@ app.post('/webhook/', function (req, res) {
             let text = event.message.text.toLowerCase();
             console.log('Msg text: "' + text + '"');
 
-            if ((text.indexOf('#plot') === 0 && text.indexOf('#plot ') !== 0) || (text.indexOf('#suggest') === 0 && text.indexOf('#suggest ') !== 0) || (text.indexOf('#starring') === 0 && text.indexOf('#starring ') !== 0) || (text.indexOf('#meta') === 0 && text.indexOf('#meta ') !== 0)) {
+            if ((text.indexOf('#plot') === 0 && text.indexOf('#plot ') !== 0) || (text.indexOf('#suggest') === 0 && text.indexOf('#suggest ') !== 0) || (text.indexOf('#starring') === 0 && text.indexOf('#starring ') !== 0) || (text.indexOf('#meta') === 0 && text.indexOf('#meta ') !== 0) || (text.indexOf('#trailer') === 0 && text.indexOf('#trailer ') !== 0)) {
                 sendTextMessage(sender, "Something went wrong. You mistyped something it looks like!")
             } else if (text.indexOf('#plot ') === 0) {
                 sendMoviePlot(sender, text.substring(text.indexOf(' ') + 1));
