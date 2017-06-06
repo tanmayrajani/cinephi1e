@@ -4,9 +4,21 @@ const dateFormat = require('dateformat');
 const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('request');
+// youtube search api helper lib
+const search = require('youtube-search');
+
 const app = express();
 const token = process.env.FB_PAGE_ACCESS_TOKEN;
 const TMDb_API_KEY = process.env.TMDB_API_KEY;
+
+// temporary
+const YOUTUBE_API_KEY = 'AIzaSyC2GcXEVt1_QWmgg01quBEqjXeg2TYbn5w';
+
+// options for yt-search
+const opts = {
+        maxResults : 10,
+        key : YOUTUBE_API_KEY
+};
 
 const genres = [{
         "id": 28,
@@ -489,6 +501,64 @@ function sendMovieMetadata(sender, text) {
 
 }
 
+// function by @beingadityak
+
+function sendTrailerLink(sender, text)
+{
+    // for getting exact movie name
+    var options =
+    {
+        method: 'GET',
+        url: 'http://api.themoviedb.org/3/search/movie',
+        qs: 
+        {
+            query: String(text),
+            include_adult: true,
+            language: 'en',
+            api_key: TMDb_API_KEY
+        }
+    };
+    request(options, function (error, response, body) {
+        if (error)
+        {
+            console.log(response);
+            throw new Error(error);
+        }
+        var jsonbody = JSON.parse(body);
+        
+        if (jsonbody.total_results > 0)
+        {
+            var moviedata = jsonbody.results[0];
+            var movietitle = moviedata.title;
+            var ytlink = null;
+            // proper title from TMDB. now, search in YT
+            var searchtext = movietitle + " trailer";
+
+            search(searchtext, opts, function(err,results){
+                if(err)
+                    console.log(err);
+                for(var i = 0; i < results.length; i++)
+                {
+                    var title = results[i].title;
+                    if(title.indexOf("official trailer") !== 1 || title.indexOf("Official Trailer") !== 1 || title.indexOf("Trailer") !== 1)
+                    {
+                        index = i;
+                        ytlink = results[index].link;
+                        sendTextMessage(sender, ytlink);
+                        break;
+                    }
+                }
+
+            });
+            
+        } 
+        else 
+        {
+            sendTextMessage(sender, "Duh! Nothing found..");
+        }
+    });    
+}
+
 app.post('/webhook/', function (req, res) {
     let messaging_events = req.body.entry[0].messaging
     for (let i = 0; i < messaging_events.length; i++) {
@@ -509,7 +579,12 @@ app.post('/webhook/', function (req, res) {
                 sendPersonMoviesData(sender, text.substring(text.indexOf(' ') + 1));
             } else if (text.indexOf('#meta ') === 0) {
                 sendMovieMetadata(sender, text.substring(text.indexOf(' ') + 1));
-            } else {
+            }
+            else if (text.indexOf('#trailer ') === 0) {
+                sendTrailerLink(sender, text.substring(text.indexOf(' ') + 1));
+            } 
+            else 
+            {
                 sendTextMessage(sender, changeTextNatural(text.substring(0, 319)));
             }
         } else if (event.postback && event.postback.payload) {
